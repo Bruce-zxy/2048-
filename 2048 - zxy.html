@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<!------分------割------线------>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="Author" content="Bruce Zhu">
+    <title>2048zxy</title>
+    <style rel="stylesheet" type="text/css">
+		/*全局设置*/
+		* { margin: 0; padding: 0; font-weight: bold; }
+		.button { width: 100px; height: 30px; background: #CB6539; display: inline-block; text-align: center; line-height: 30px; border-radius: 5px; cursor: pointer;}
+		#backboard { margin: 0 auto; width: 500px; position: relative; }
+
+		/*游戏面板*/
+		.title { font-size: 48px; text-align: center; margin-bottom: 10px; }
+		#board_game { width: 480px; height: 480px; border-radius: 10px; background: #C1BCB8; margin-top: 10px; padding: 20px 0 0 20px; position: relative; }
+		.board { display: inline-block; width: 100px; height: 100px; background: #ccc; margin: 0 20px 20px 0; float: left; border-radius: 5px; }
+		.cell { width: 100px; height: 100px; position: absolute; text-align: center; line-height: 100px; font-size: 40px; color: #fff; border-radius: 5px; }
+		#cell10, #cell11, #cell12, #cell13 { top: 140px; }
+		#cell20, #cell21, #cell22, #cell23 { top: 260px; }
+		#cell30, #cell31, #cell32, #cell33 { top: 380px; }
+		#cell01, #cell11, #cell21, #cell31 { left: 140px; }
+		#cell02, #cell12, #cell22, #cell32 { left: 260px; }
+		#cell03, #cell13, #cell23, #cell33 { left: 380px; }
+		.num2 { background: #D4CEA3 }
+		.num4 { background: #D7AB54 }
+		.num8 { background: #D38A32 }
+		.num16 { background: #B4CEC3 }
+		.num32 { background: #A1AF83 }
+		.num32 { background: #A1AF83 }
+		.num32 { background: #A1AF83 }
+		.num64 { background: #8F9E44 }
+		.num128 { background: #5686A5 }
+		.num256 { background: #244FA1 }
+		.num512 { background: #B878C2 }
+		.num1024 { background: #8D4BCD }
+		.num2048 { background: #DD4C7B }
+        .num4096 { background: #71EEA6 }
+        .num8192 { background: #33E887 }
+        .num16384 { background: #46C560 }
+        .num32768 { background: #96D02C }
+        .num65536 { background: #C4E700 }
+        .control { width: 100px; height: 200px; margin: 10px 0 0 15px; cursor: pointer; background: #ADA987; border-radius: 5px; font-size: 80px; }
+		#gameover { position: absolute; width: 100%; height: 100%; top: 40px; left: 0; }
+		#gameover .element { position: absolute; width: 180px; height: 110px; top: 180px; left: 150px; text-align: center; background: rgba(240, 240, 240, 0.7); padding-top: 10px; border-radius: 8px; display: block; }
+		#gameover h1 { margin-bottom: 5px; }
+		#gameover a { display: inline-block; margin-top: 5px; }
+		#gameover div { width: 500px; height: 500px; background: rgba(194, 194, 194, 0.5); border-radius: 10px; }
+    </style>
+    <script type="text/javascript">
+    	var cells = [
+    	    [0, 0, 0, 0],
+    	    [0, 0, 0, 0],
+    	    [0, 0, 0, 0],
+    	    [0, 0, 0, 0]
+    	]
+    	var score = 0;
+
+    	// 主体函数
+    	window.onload = function() {
+    	    $("gameover").style.display = "none";
+    	    StartGame();
+    	}
+
+    	function $(id) {
+    	    return document.getElementById(id);
+    	}
+
+    	function StartGame() {
+    	    $("gameover").style.display = "none";
+    	    $("newgame").onclick = StartGame;
+    	    $("restart").onclick = StartGame;
+    	    score = 0;
+    	    for (var row = 0; row < 4; row++) {
+    	        for (var col = 0; col < 4; col++) {
+    	            cells[row][col] = 0;
+    	        }
+    	    }
+    	    RandomNum();
+    	    RandomNum();
+    	    UpdateView();
+    	}
+
+    	function GameOver() {
+    	    if (CanMoveUp() || CanMoveDown() || CanMoveLeft() || CanMoveRight()) {
+    	        return false;
+    	    }
+    	    $("gameover").style.display = "block";
+    	}
+
+    	function UpdateView() {
+    	    for (var row = 0; row < 4; row++) {
+    	        for (var col = 0; col < 4; col++) {
+    	            var id = $("cell" + row + col);
+    	            var n = cells[row][col];
+    	            id.className = "cell";
+    	            id.innerHTML = "";
+    	            if (cells[row][col] != 0) {
+    	                id.className = "cell num" + n;
+    	                id.innerHTML = n;
+    	            }
+    	        }
+    	    }
+    	    $("score").innerHTML = score;
+    	    $("finalscore").innerHTML = score;
+    	}
+
+    	function RandomNum() {
+    	    while (1) {
+    	        var row = parseInt(Math.random() * 4);
+    	        var col = parseInt(Math.random() * 4);
+    	        if (cells[row][col] == 0) {
+    	            cells[row][col] = Math.random() < 0.7 ? 2 : 4;
+    	            break;
+    	        }
+    	    }
+    	}
+
+    	function NextNumRow(row, col, step) {
+    	    while (1) {
+    	        if (row < 0 || row > 3) {
+    	            return -1;
+    	        }
+    	        if (cells[row][col] != 0) {
+    	            return row;
+    	        } else {
+    	            row += step;
+    	        }
+    	    }
+    	}
+
+    	function NextNumCol(row, col, step) {
+    	    while (1) {
+    	        if (col < 0 || col > 3) {
+    	            return -1;
+    	        }
+    	        if (cells[row][col] != 0) {
+    	            return col;
+    	        } else {
+    	            col += step;
+    	        }
+    	    }
+    	}
+
+    	// 步骤函数
+    	/*向上移动*/
+    	function UpAction() {
+    	    if (GameOver()) {
+    	        return;
+    	    };
+    	    if (!CanMoveUp()) {
+    	        return;
+    	    };
+    	    MoveUp();
+    	    RandomNum();
+    	    UpdateView();
+    	}
+
+    	function CanMoveUp() {
+    	    for (var row = 1; row < 4; row++) {
+    	        for (var col = 0; col < 4; col++) {
+    	            if (cells[row][col] != 0 && cells[row - 1][col] == 0) {
+    	                return true;
+    	            }
+    	            if (cells[row][col] != 0 && cells[row][col] == cells[row - 1][col]) {
+    	                return true;
+    	            }
+    	        }
+    	    }
+    	    return false;
+    	}
+
+    	function MoveUp() {
+    	    for (var col = 0; col < 4; col++) {
+    	        for (var row = 0; row < 4;) {
+    	            var nextrow = NextNumRow(row + 1, col, 1);
+    	            if (nextrow == -1) {
+    	                break;
+    	            };
+    	            if (cells[row][col] == 0) {
+    	                cells[row][col] = cells[nextrow][col];
+    	                cells[nextrow][col] = 0;
+    	            } else if (cells[row][col] == cells[nextrow][col]) {
+    	                cells[row][col] += cells[nextrow][col];
+    	                cells[nextrow][col] = 0;
+    	                score += cells[row][col];
+    	                row++;
+    	            } else {
+    	                row++;
+    	            }
+    	        }
+    	    }
+    	}
+
+    	/*向下移动*/
+    	function DownAction() {
+    	    if (GameOver()) {
+    	        return;
+    	    };
+    	    if (!CanMoveDown()) {
+    	        return;
+    	    };
+    	    MoveDown();
+    	    RandomNum();
+    	    UpdateView();
+    	}
+
+    	function CanMoveDown() {
+    	    for (var row = 0; row < 3; row++) {
+    	        for (var col = 0; col < 4; col++) {
+    	            if (cells[row][col] != 0 && cells[row + 1][col] == 0) {
+    	                return true;
+    	            }
+    	            if (cells[row][col] != 0 && cells[row][col] == cells[row + 1][col]) {
+    	                return true;
+    	            }
+    	        }
+    	    }
+    	    return false;
+    	}
+
+    	function MoveDown() {
+    	    for (var col = 0; col < 4; col++) {
+    	        for (var row = 3; row > -1;) {
+    	            var nextrow = NextNumRow(row - 1, col, -1);
+    	            if (nextrow == -1) {
+    	                break;
+    	            };
+    	            if (cells[row][col] == 0) {
+    	                cells[row][col] = cells[nextrow][col];
+    	                cells[nextrow][col] = 0;
+    	            } else if (cells[row][col] == cells[nextrow][col]) {
+    	                cells[row][col] += cells[nextrow][col];
+    	                cells[nextrow][col] = 0;
+    	                score += cells[row][col];
+    	                row--;
+    	            } else {
+    	                row--;
+    	            }
+    	        }
+    	    }
+    	}
+
+    	/*向左移动*/
+    	function LeftAction() {
+    	    if (GameOver()) {
+    	        return;
+    	    };
+    	    if (!CanMoveLeft()) {
+    	        return;
+    	    };
+    	    MoveLeft();
+    	    RandomNum();
+    	    UpdateView();
+    	}
+
+    	function CanMoveLeft() {
+    	    for (var row = 0; row < 4; row++) {
+    	        for (var col = 1; col < 4; col++) {
+    	            if (cells[row][col] != 0 && cells[row][col - 1] == 0) {
+    	                return true;
+    	            }
+    	            if (cells[row][col] != 0 && cells[row][col] == cells[row][col - 1]) {
+    	                return true;
+    	            }
+    	        }
+    	    }
+    	    return false;
+    	}
+
+    	function MoveLeft() {
+    	    for (var row = 0; row < 4; row++) {
+    	        for (var col = 0; col < 4;) {
+    	            var nextcol = NextNumCol(row, col + 1, 1);
+    	            if (nextcol == -1) {
+    	                break;
+    	            };
+    	            if (cells[row][col] == 0) {
+    	                cells[row][col] = cells[row][nextcol];
+    	                cells[row][nextcol] = 0;
+    	            } else if (cells[row][col] == cells[row][nextcol]) {
+    	                cells[row][col] += cells[row][nextcol];
+    	                cells[row][nextcol] = 0;
+    	                score += cells[row][col];
+    	                col++;
+    	            } else {
+    	                col++;
+    	            }
+    	        }
+    	    }
+    	}
+
+    	/*向右移动*/
+    	function RightAction() {
+    	    if (GameOver()) {
+    	        return;
+    	    };
+    	    if (!CanMoveRight()) {
+    	        return;
+    	    };
+    	    MoveRight();
+    	    RandomNum();
+    	    UpdateView();
+    	}
+
+    	function CanMoveRight() {
+    	    for (var row = 0; row < 4; row++) {
+    	        for (var col = 0; col < 3; col++) {
+    	            if (cells[row][col] != 0 && cells[row][col + 1] == 0) {
+    	                return true;
+    	            }
+    	            if (cells[row][col] != 0 && cells[row][col] == cells[row][col + 1]) {
+    	                return true;
+    	            }
+    	        }
+    	    }
+    	    return false;
+    	}
+
+    	function MoveRight() {
+    	    for (var row = 0; row < 4; row++) {
+    	        for (var col = 3; col > -1;) {
+    	            var nextcol = NextNumCol(row, col - 1, -1);
+    	            if (nextcol == -1) {
+    	                break;
+    	            };
+    	            if (cells[row][col] == 0) {
+    	                cells[row][col] = cells[row][nextcol];
+    	                cells[row][nextcol] = 0;
+    	            } else if (cells[row][col] == cells[row][nextcol]) {
+    	                cells[row][col] += cells[row][nextcol];
+    	                cells[row][nextcol] = 0;
+    	                score += cells[row][col];
+    	                col--;
+    	            } else {
+    	                col--;
+    	            }
+    	        }
+    	    }
+    	}
+
+    	document.onkeydown = function() {
+    	    var e = window.event;
+    	    if (e.keyCode == 37 || e.keyCode == 65) {
+    	        LeftAction();
+    	    }
+    	    if (e.keyCode == 38 || e.keyCode == 87) {
+    	        UpAction();
+    	    }
+    	    if (e.keyCode == 39 || e.keyCode == 68) {
+    	        RightAction();
+    	    }
+    	    if (e.keyCode == 40 || e.keyCode == 83) {
+    	        DownAction();
+    	    }
+    	}
+    </script>
+  </head>
+<!------分------割------线------>
+  <body id="body">
+
+	<h1 class="title">2048小游戏</h1>
+	<div id="backboard">
+		<div id="board_top">
+			<p>
+				<a class="button" id="newgame">新游戏</a>
+				分数：
+				<span id="score">0</span>
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				<span>方向控制：↑←→↓  WADS</span>
+			</p>
+		</div>
+		<div id="board_game">
+			<div class="board"></div>
+			<div class="board"></div>
+			<div class="board"></div>
+			<div class="board"></div>
+
+			<div class="board"></div>
+			<div class="board"></div>
+			<div class="board"></div>
+			<div class="board"></div>
+
+			<div class="board"></div>
+			<div class="board"></div>
+			<div class="board"></div>
+			<div class="board"></div>
+
+			<div class="board"></div>
+			<div class="board"></div>
+			<div class="board"></div>
+			<div class="board"></div>
+
+
+			<div id="cell00" class="cell num2">2</div>
+			<div id="cell01" class="cell num4">4</div>
+			<div id="cell02" class="cell num8">8</div>
+			<div id="cell03" class="cell num16">16</div>
+
+			<div id="cell10" class="cell num32">32</div>
+			<div id="cell11" class="cell num64">64</div>
+			<div id="cell12" class="cell num128">128</div>
+			<div id="cell13" class="cell num256">256</div>
+
+			<div id="cell20" class="cell num512">512</div>
+			<div id="cell21" class="cell num1024">1024</div>
+			<div id="cell22" class="cell num2048">2048</div>
+			<div id="cell23" class="cell num4096">4096</div>
+
+			<div id="cell30" class="cell num8192">8192</div>
+			<div id="cell31" class="cell num16384">16384</div>
+			<div id="cell32" class="cell num32768">32768</div>
+			<div id="cell33" class="cell num65536">65536</div>
+		</div>
+        <tr>
+            <td><button onclick="UpAction()" class="control">上</button></td>
+            <td><button onclick="LeftAction()" class="control">左</button></td>
+            <td><button onclick="DownAction()" class="control">下</button></td>
+            <td><button onclick="RightAction()" class="control">右</button></td>
+        </tr>
+
+		<div id="gameover">
+			<div></div>
+			<div class="element">
+				<h1>游戏结束</h1>
+				分数:
+				<span id="finalscore">0</span><br>
+				<a class="button" id="restart">重新开始</a>
+			</div>
+		</div>
+	</div>
+  </body>
+<!------分------割------线------>
+</html>
